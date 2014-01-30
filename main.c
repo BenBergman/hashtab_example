@@ -40,6 +40,29 @@ static hashval_t hash(const void *node)
 	return htab_hash_string(((Node *) node)->str);
 }
 
+static void add(htab_t table, const char *str, size_t count)
+{
+	Node *node = Node_new(str);
+	void **slot = htab_find_slot(table, node, INSERT);
+
+	if (slot != NULL) {
+		node->count = count;
+		*slot = node;
+	}
+}
+
+size_t get(htab_t table, const char *str)
+{
+	Node *key = Node_new(str);
+	Node *node = (Node *) htab_find(table, key);
+
+	if (node == NULL) {
+		return -1;
+	}
+
+	return node->count;
+}
+
 int main(int argc, const char *argv[])
 {
 	printf("Hello world\n");
@@ -48,28 +71,16 @@ int main(int argc, const char *argv[])
 	htab_t table = htab_create_alloc(size, hash, Node_eq, key_del, calloc, free);
 
 	printf("Inserting 42 under hello...\n");
-	//printf("hash of 'hello': %u\n", htab_hash_string("hello"));
-	Node *hello_node = Node_new("hello");
-	void **slot = htab_find_slot(table, hello_node, INSERT);
-	if (*slot == NULL)
-	{
-		hello_node->count = 42;
-		*slot = hello_node;
-	}
+	add(table, "hello", 42);
 
 	printf("Inserting 9000 under world...\n");
-	Node *world_node = Node_new("world");
-	slot = htab_find_slot(table, world_node, INSERT);
-	if (*slot == NULL)
-	{
-		world_node->count = 9000;
-		*slot = world_node;
-	}
+	add(table, "world", 9000);
 
 	printf("Reading back values...\n");
-	Node *hello_key = Node_new("hello");
-	Node *hello = (Node *) htab_find(table, hello_key);
-	printf("hello: %lu\n", hello->count);
+	printf("hello: %lu\n", get(table, "hello"));
+	printf("world: %lu\n", get(table, "world"));
+	printf("foo: %lu\n", get(table, "foo"));
+	printf("bar: %lu\n", get(table, "bar"));
 
 	return 0;
 }
